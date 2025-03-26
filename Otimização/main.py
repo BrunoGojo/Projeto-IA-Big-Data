@@ -3,7 +3,7 @@ import random
 import matplotlib.pyplot as plt
 import cv2
 
-# Carregar a imagem e extrair os pontos
+# Imagem será carregado
 image_path = "./dados.png"
 image = cv2.imread(image_path)
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -17,7 +17,7 @@ red_mask = cv2.bitwise_or(mask1, mask2)
 contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 cities = np.array([cv2.boundingRect(cnt)[:2] for cnt in contours])
 
-# Calcular a distância total de um caminho
+# Calcula a distância total de um caminho
 def total_distance(cities, path):
     return sum(np.linalg.norm(cities[path[i]] - cities[path[i-1]]) for i in range(len(path)))
 
@@ -69,10 +69,10 @@ def plot_path(cities, path, title):
     plt.title(title)
     plt.show()
 
-# Testar Subida de Encosta
+# Testando Subida de Encosta
 hc_path, hc_dist = hill_climbing(cities)
-plot_path(cities, hc_path, f"Hill Climbing - Distância: {hc_dist:.2f}")
+plot_path(cities, hc_path, f"Subida de Encosta (Teste) - Distância: {hc_dist:.2f}")
 
-# Testar Têmpera Simulada
+# Testando Têmpera Simulada
 sa_path, sa_dist = simulated_annealing(cities)
-plot_path(cities, sa_path, f"Simulated Annealing - Distância: {sa_dist:.2f}")
+plot_path(cities, sa_path, f"Têmpera Simulada (Teste) - Distância: {sa_dist:.2f}")
