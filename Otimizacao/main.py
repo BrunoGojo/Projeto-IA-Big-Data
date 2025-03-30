@@ -6,21 +6,26 @@ import matplotlib.pyplot as plt
 import cv2
 import pandas as pd
 
-#Criando as pastas de resultados
+# Caminho do diretório principal de resultados
+results_dir = "resultados"
+
+# Verifica se o diretório existe e o remove
+if os.path.exists(results_dir):
+    shutil.rmtree(results_dir)
+
+# Recria o diretório e seus subdiretórios
 output_dirs = {
-    "hill_climbing": "resultados/Subida de encosta",
-    "simulated_annealing": "resultados/Têmpera Simulada",
-    "alg_conj": "resultados/Algoritmos em conjunto",
-    "hist": "resultados/Histogramas",
-    "dxl": "resultados/DxI",
-    "resul": "/resultados"
+    "hill_climbing": os.path.join(results_dir, "Subida de encosta"),
+    "simulated_annealing": os.path.join(results_dir, "Têmpera Simulada"),
+    "alg_conj": os.path.join(results_dir, "Algoritmos em conjunto"),
+    "hist": os.path.join(results_dir, "Histogramas"),
+    "dxl": os.path.join(results_dir, "DxI"),
+    "est_dist": os.path.join(results_dir, "estatisticas_distancia")
 }
 
-#Verifica se existe os dirs
+# Criar as pastas novamente
 for directory in output_dirs.values():
-  if os.path.exists(directory):
-      shutil.rmtree(directory)
-  os.makedirs(directory, exist_ok=True)
+    os.makedirs(directory, exist_ok=True)
 
 # Carregar imagem
 image_path = "/content/dados.png"
@@ -108,17 +113,41 @@ def plot_and_save(cities, path, title, filename):
 # Salvar resultados
 hc_results, sa_results = [], []
 
+import time
+
+hc_results = []
+hc_times = []
+
 # Executar e salvar resultados da Subida de Encosta
 for i in range(10):
+    start_time = time.time()  # Início da contagem do tempo
     hc_path, hc_dist = hill_climbing(cities)
+    end_time = time.time()  # Fim da contagem do tempo
+
+    execution_time = end_time - start_time  # Tempo decorrido
+
     hc_results.append(hc_dist)
+    hc_times.append(execution_time)  # Armazena o tempo de execução
+
     filename = os.path.join(output_dirs["hill_climbing"], f"hc_result_{i}.png")
     plot_and_save(cities, hc_path, f"Subida de Encosta - Distância: {hc_dist:.2f}", filename)
 
+import time
+
+sa_results = []
+sa_times = []
+
 # Executar e salvar resultados da Têmpera Simulada
 for i in range(10):
+    start_time = time.time()  # Início da contagem do tempo
     sa_path, sa_dist = simulated_annealing(cities)
+    end_time = time.time()  # Fim da contagem do tempo
+
+    execution_time = end_time - start_time  # Tempo decorrido
+
     sa_results.append(sa_dist)
+    sa_times.append(execution_time)  # Armazena o tempo de execução
+
     filename = os.path.join(output_dirs["simulated_annealing"], f"sa_result_{i}.png")
     plot_and_save(cities, sa_path, f"Têmpera Simulada - Distância: {sa_dist:.2f}", filename)
 
@@ -133,7 +162,7 @@ df = pd.DataFrame({
 # Estatísticas
 summary = df.groupby("Algoritmo")["Distância"].agg(["mean", "min", "max", "std"])
 
-output_txt = "resultados/estatisticas.txt"
+output_txt = "resultados/estatisticas_distancia/estatisticas.txt"
 
 # salva num arquivo de texto
 with open(output_txt, "w") as file:
@@ -207,3 +236,46 @@ plt.title("Comparação de Desempenho: Distância vs Iterações")
 plt.legend()
 filename = os.path.join(distance_interations, "dxi.png")
 plt.savefig(filename)
+
+"""Verificação de arrays"""
+
+print(len(hc_results), len(sa_results), len(hc_times), len(sa_times))
+
+"""Tempos de Execução"""
+
+stats_dir = "resultados/estatisticas_tempo"
+os.makedirs(stats_dir, exist_ok=True)
+
+# Criar e salvar estatísticas de cada iteração
+for i in range(min_length):
+    iter_df = pd.DataFrame({
+        "Algoritmo": ["Subida de Encosta", "Têmpera Simulada"],
+        "Distância": [hc_results[i], sa_results[i]],
+        "Tempo (s)": [hc_times[i], sa_times[i]]
+    })
+
+    summary_iter = iter_df.groupby("Algoritmo")["Tempo (s)"].agg(["mean", "min", "max", "std"])
+
+    # Salvar estatísticas de cada iteração em um arquivo txt
+    summary_file = os.path.join(stats_dir, f"estatisticas_iteracao_{i+1}.txt")
+    with open(summary_file, "w") as f:
+        f.write(summary_iter.to_string())
+
+    print(f"Estatísticas da Iteração {i+1} salvas em {summary_file}")
+
+# Criar DataFrame geral
+df = pd.DataFrame({
+    "Algoritmo": ["Subida de Encosta"] * min_length + ["Têmpera Simulada"] * min_length,
+    "Distância": hc_results[:min_length] + sa_results[:min_length],
+    "Tempo (s)": hc_times[:min_length] + sa_times[:min_length]
+})
+
+# Estatísticas gerais
+summary_general = df.groupby("Algoritmo")["Tempo (s)"].agg(["mean", "min", "max", "std"])
+
+# Salvar resumo geral
+summary_file_general = os.path.join(stats_dir, "estatisticas_gerais.txt")
+with open(summary_file_general, "w") as f:
+    f.write(summary_general.to_string())
+
+print(f"Estatísticas gerais salvas em {summary_file_general}")
