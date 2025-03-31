@@ -1,0 +1,4 @@
+                       mean       min       max  std
+Algoritmo                                           
+Subida de Encosta  0.626594  0.626594  0.626594  NaN
+Têmpera Simulada   2.855211  2.855211  2.855211  NaN
